@@ -3,6 +3,18 @@
 trigger:
 - master
 
+variables:
+
+- group: KF-VARS
+
+  KF_BATCH: 32
+  KF_EPOCHS: 5
+  KF_LEARNING_RATE: 0.0001
+  KF_MODEL_NAME: tacosandburritos
+  KF_PERSISTENT_VOLUME_NAME: azure
+  KF_PERSISTENT_VOLUME_PATH: /mnt/azure
+
+
 pr: none
 
 stages:
@@ -15,36 +27,36 @@ stages:
     steps:
     - task: AzureCLI@1
       inputs:
-        azureSubscription: 'Shared Data Platform - R+D (1308a130-d549-44e1-ba66-ce8c487d76e3)'
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
         inlineScript: '
-          sudo az acr login -n kubeflowregistry && 
+          sudo az acr login -n $(KF_ACR) && 
           cd code &&
           cd preprocess &&
-          sudo docker build -t kubeflowregistry.azurecr.io/kubeflow/preprocess:$BUILD_SOURCEVERSION . &&
-          sudo docker push kubeflowregistry.azurecr.io/kubeflow/preprocess:$BUILD_SOURCEVERSION '
+          sudo docker build -t $(KF_ACR).azurecr.io/kubeflow/preprocess:$BUILD_SOURCEVERSION . &&
+          sudo docker push $(KF_ACR).azurecr.io/kubeflow/preprocess:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Preprocess Image'
 
     - task: AzureCLI@1
       inputs:
-        azureSubscription: 'Shared Data Platform - R+D (1308a130-d549-44e1-ba66-ce8c487d76e3)'
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
         inlineScript: '
           cd code &&
           cd training &&
-          sudo docker build -t kubeflowregistry.azurecr.io/kubeflow/training:$BUILD_SOURCEVERSION . &&
-          sudo docker push kubeflowregistry.azurecr.io/kubeflow/training:$BUILD_SOURCEVERSION '
+          sudo docker build -t $(KF_ACR).azurecr.io/kubeflow/training:$BUILD_SOURCEVERSION . &&
+          sudo docker push $(KF_ACR).azurecr.io/kubeflow/training:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Training Image'
 
     - task: AzureCLI@1
       inputs:
-        azureSubscription: 'Shared Data Platform - R+D (1308a130-d549-44e1-ba66-ce8c487d76e3)'
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
         inlineScript: '
           cd code &&
           cd register &&
-          sudo docker build -t kubeflowregistry.azurecr.io/kubeflow/register:$BUILD_SOURCEVERSION . &&
-          sudo docker push kubeflowregistry.azurecr.io/kubeflow/register:$BUILD_SOURCEVERSION '
+          sudo docker build -t $(KF_ACR).azurecr.io/kubeflow/register:$BUILD_SOURCEVERSION . &&
+          sudo docker push $(KF_ACR).azurecr.io/kubeflow/register:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Register Image'
 
 
@@ -63,10 +75,10 @@ stages:
       env:
         KF_MAPPED_SERVICE_PRINCIPAL_PASSWORD: $(KF_SERVICE_PRINCIPAL_PASSWORD)
       inputs:
-        azureSubscription: 'Shared Data Platform - R+D (1308a130-d549-44e1-ba66-ce8c487d76e3)'
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
         inlineScript: |
-          az aks get-credentials -g kubeflow-mlops-rg -n kubeflow-mlops-cluster
+          az aks get-credentials -g $(KF_RESOURCE_GROUP) -n $(KF_AKS_CLUSTER)
           kubectl port-forward --namespace kubeflow svc/ml-pipeline 8888:8888 &
           kubepid=$!
           
