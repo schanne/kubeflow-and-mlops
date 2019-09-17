@@ -12,7 +12,6 @@ variables:
   KF_PERSISTENT_VOLUME_NAME: azure
   KF_PERSISTENT_VOLUME_PATH: /mnt/azure
 
-
 pr: none
 
 stages:
