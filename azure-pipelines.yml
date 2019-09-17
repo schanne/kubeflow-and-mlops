@@ -5,6 +5,8 @@ trigger:
 
 variables:
 
+- group: KF-VARS
+
   KF_BATCH: 32
   KF_EPOCHS: 5
   KF_LEARNING_RATE: 0.0001
@@ -12,6 +14,7 @@ variables:
   KF_PERSISTENT_VOLUME_NAME: azure
   KF_PERSISTENT_VOLUME_PATH: /mnt/azure
 
+  
 pr: none
 
 stages:
@@ -61,8 +64,6 @@ stages:
 - stage: KubeflowTrigger
   dependsOn: ContainerConfig
   displayName: 'Trigger Kubeflow Pipeline'
-  variables:
-  - group: kf-variables
   jobs:
   - job: Kubeflow
     pool:
