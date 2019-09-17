@@ -6,14 +6,6 @@ trigger:
 variables:
 
 - group: KF-VARS
-
-  KF_BATCH: 32
-  KF_EPOCHS: 5
-  KF_LEARNING_RATE: 0.0001
-  KF_MODEL_NAME: tacosandburritos
-  KF_PERSISTENT_VOLUME_NAME: azure
-  KF_PERSISTENT_VOLUME_PATH: /mnt/azure
-
   
 pr: none
 
@@ -62,6 +54,15 @@ stages:
 
 # Moved KF step to build
 - stage: KubeflowTrigger
+
+  variables: 
+    KF_BATCH: 32
+    KF_EPOCHS: 5
+    KF_LEARNING_RATE: 0.0001
+    KF_MODEL_NAME: tacosandburritos
+    KF_PERSISTENT_VOLUME_NAME: azure
+    KF_PERSISTENT_VOLUME_PATH: /mnt/azure
+
   dependsOn: ContainerConfig
   displayName: 'Trigger Kubeflow Pipeline'
   jobs:
