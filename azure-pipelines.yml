@@ -25,8 +25,8 @@ stages:
           sudo az acr login -n $(KF_ACR) && 
           cd code &&
           cd preprocess &&
-          sudo docker build -t $(KF_ACR).azurecr.io/kubeflow/preprocess:$BUILD_SOURCEVERSION . &&
-          sudo docker push $(KF_ACR).azurecr.io/kubeflow/preprocess:$BUILD_SOURCEVERSION '
+          sudo docker build -t $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION . &&
+          sudo docker push $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Preprocess Image'
 
     - task: AzureCLI@1
@@ -36,8 +36,8 @@ stages:
         inlineScript: '
           cd code &&
           cd training &&
-          sudo docker build -t $(KF_ACR).azurecr.io/kubeflow/training:$BUILD_SOURCEVERSION . &&
-          sudo docker push $(KF_ACR).azurecr.io/kubeflow/training:$BUILD_SOURCEVERSION '
+          sudo docker build -t $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION . &&
+          sudo docker push $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Training Image'
 
     - task: AzureCLI@1
@@ -47,8 +47,8 @@ stages:
         inlineScript: '
           cd code &&
           cd register &&
-          sudo docker build -t $(KF_ACR).azurecr.io/kubeflow/register:$BUILD_SOURCEVERSION . &&
-          sudo docker push $(KF_ACR).azurecr.io/kubeflow/register:$BUILD_SOURCEVERSION '
+          sudo docker build -t $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION . &&
+          sudo docker push $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Register Image'
 
 
