@@ -22,11 +22,11 @@ stages:
         azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
         inlineScript: '
-          sudo az acr login -n $(KF_ACR) && 
-          cd code &&
-          cd preprocess &&
-          sudo docker build -t $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION . &&
-          sudo docker push $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION '
+          az acr login -n $(KF_ACR)  
+          cd code 
+          cd preprocess 
+          docker build -t $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION . 
+          docker push $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION '
         displayName: 'Build & Push Preprocess Image'
 
     - task: AzureCLI@1
