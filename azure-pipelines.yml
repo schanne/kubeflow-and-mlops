@@ -33,22 +33,22 @@ stages:
       inputs:
         azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
-        inlineScript: '
-          cd code &&
-          cd training &&
-          sudo docker build -t $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION . &&
-          sudo docker push $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION '
+        inlineScript: |
+          cd code 
+          cd training 
+          docker build -t $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION .
+          docker push $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION 
         displayName: 'Build & Push Training Image'
 
     - task: AzureCLI@1
       inputs:
         azureSubscription: $(KF_SUBSCRIPTION_ID)
         scriptLocation: 'inlineScript'
-        inlineScript: '
-          cd code &&
-          cd register &&
-          sudo docker build -t $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION . &&
-          sudo docker push $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION '
+        inlineScript: |
+          cd code 
+          cd register 
+          docker build -t $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION . 
+          docker push $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION 
         displayName: 'Build & Push Register Image'
 
 
@@ -68,7 +68,7 @@ stages:
   jobs:
   - job: Kubeflow
     pool:
-      vmImage: ubuntu-16.04
+      name: Hosted Ubuntu 1604
     steps:
     - task: AzureCLI@1
       env:
@@ -81,7 +81,7 @@ stages:
           kubectl port-forward --namespace kubeflow svc/ml-pipeline 8888:8888 &
           kubepid=$!
           
-          sudo apt-get install python3-setuptools
+          apt-get install python3-setuptools
           pip3 install wheel
           pip3 install kfp
           
