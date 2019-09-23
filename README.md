@@ -1,5 +1,3 @@
-[![Build Status](https://dev.azure.com/daaronch/Kubeflow%20and%20MLOps/_apis/build/status/aronchick.kubeflow-and-mlops?branchName=master)](https://dev.azure.com/daaronch/Kubeflow%20and%20MLOps/_build/latest?definitionId=3&branchName=master)
+[![Build Status](https://dev.azure.com/sasrose/kubeflow/_apis/build/status/DivineOps.kubeflow-and-mlops?branchName=master)](https://dev.azure.com/sasrose/kubeflow/_build/latest?definitionId=84&branchName=master)
+# MLOps with Kubeflow, Azure Machine Learning and Azure Pipelines
 
-# Kubeflow and Azure Pipelines
-
-Blue Shirt
