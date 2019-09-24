@@ -3,4 +3,6 @@
 
 This repository provides a sample ML CI/CD pipeline using Kubeflow, Azure ML workspaces and Azure Pipelines
 
-# Using this guide
+# Using this code
+
+## Deploy Kubeflow
