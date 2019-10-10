@@ -9,10 +9,12 @@ TODO
 
 # Deploy Kubeflow
 
+Note: this guide deploys Kubeflow on AKS on Azure platform. For more examples, and guides for other platforms, please refer to the [kubeflow.org getting started page](https://www.kubeflow.org/docs/started/getting-started/)
+
 ## Prerequisites
 
 #### Install Azure CLI
-[Install Azure CLI on Windows](
+[Install Azure CLI on Windows machine](
 https://docs.microsoft.com/en-us/cli/azure/install-azure-cli-windows?view=azure-cli-latest) 
 
 Install Azure CLI on a Mac:
@@ -25,6 +27,8 @@ az aks install-cli
 ```
 
 ## 1. Create the AKS cluster for Kubeflow
+
+Note: if you already have an AKS cluster, you can skip to the step 1.9.
 
 1. Login
 ```
@@ -80,3 +84,60 @@ The output of the above command will be similar to the below. Please note the GU
 az aks create -g <resource_group_name> -n <cluster_name> -s <agent_vm_size> -c <agent_count> -l <location> --generate-ssh-keys --service-principal <appId> --client-secret <password>
 ```
 
+9. Connect to the AKS cluster you've deployed
+```
+az aks get-credentials -n <cluster_name> -g <resource_group_name>
+```
+
+10. Sanity check that all the base namespaces are running
+```
+kubectl get all --all-namespaces 
+```
+
+## 2. Install Kubeflow
+
+For more examples, and guides for other platforms, please refer to the [kubeflow.org getting started page](https://www.kubeflow.org/docs/started/getting-started/)
+1. Download the latest kfctl executable from the [kubeflow releases page](https://github.com/kubeflow/kubeflow/releases/) to your local machine
+
+#### On a Mac
+Use the latest Mac executable, e.g. 
+https://github.com/kubeflow/kubeflow/releases/download/v0.6.2/kfctl_v0.6.2_darwin.tar.gz
+
+#### On a Windows machine
+Use the [Linux Subsystem](https://docs.microsoft.com/en-us/windows/wsl/install-win10) or the [Azure Cloud Shell](http://shell.azure.com) bash environment.
+
+Use the latest Linux executable, e.g. https://github.com/kubeflow/kubeflow/releases/download/v0.6.2/kfctl_v0.6.2_linux.tar.gz
+
+2. Choose the desired location, and unpack the tar.gz
+```
+tar -xvf kfctl_<release tag>_<platform>.tar.gz
+```
+
+3. Add the kfctl location to PATH
+```
+export PATH=$PATH:<path to where kfctl was unpacked>
+```
+
+4. Choose and set the directory name for kubeflow setup files
+```
+export KFAPP=<your choice of application directory name> (ensure the name is lowercase)
+```
+
+5. Choose the latest istio config file 
+```
+export CONFIG=<file path or url to config to use>
+```
+e.g.
+```
+export CONFIG=https://raw.githubusercontent.com/kubeflow/kubeflow/v0.6.2/bootstrap/config/kfctl_k8s_istio.0.6.2.yaml
+````
+
+6. Generate the configuration files and deploy kubeflow
+
+Note: make sure that you are connected to the cluster. Refer to step 1.9. for details. 
+
+```
+cd ${KFAPP}
+kfctl generate all -V
+kfctl apply all -V
+```
