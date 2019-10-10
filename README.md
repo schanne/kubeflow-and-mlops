@@ -141,3 +141,84 @@ cd ${KFAPP}
 kfctl generate all -V
 kfctl apply all -V
 ```
+
+7. Test that kufeflow is now running
+```
+kubectl get all -n kubeflow
+```
+
+8. Connect to the kubeflow dashboard
+
+#### Open the dashboard locally
+```
+kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
+```
+And browse to http://localhost:8080 on your local machine
+
+#### Enable external IP in AKS
+To expose the kubeflow dashboard over an external IP in AKS, modify the type of the istio ingress gateway. To do so, run:
+```
+kubectl edit -n istio-system svc/istio-ingressgateway
+```
+And then replace ```type: NodePort``` with ```type: LoadBalancer``` and save the file.
+
+Use the command 
+```
+kubectl get -w -n istio-system svc/istio-ingressgateway
+```
+To get the new IP of the kubeflow dashboard.
+
+Your dashboard should look similar to the following
+![Kubeflow Dashboard](/readme-images/kubeflow-dashboard.png)
+
+
+## 3. Deploy the additional Azure resources required for the CI/CD pipeline
+
+## Deploy Azure Container Registry
+
+1. Create the Azure Container Registry
+```
+az acr create -n <acr_name> -g <resource_group_name> --sku Standard 
+```
+
+2. Add permissions for the AKS Service Principal (SP) over the Azure Container Registry (ACR)
+
+a. Get the ACR ID
+```
+ACR_ID=$(az acr show --name $ACR --resource-group <resource_group_name> --query "id" --output tsv)
+```
+
+b. Get the SP ID
+```
+CLIENT_ID=$(az aks show --resource-group <resource_group_name> --name <cluster_name> --query "servicePrincipalProfile.clientId" --output tsv) 
+```
+
+Note: do not assume that the SP ID is the same as the one we deployed it with. 
+
+c. Assign the permissions
+```
+az role assignment create --assignee $CLIENT_ID --role acrpull --scope $ACR_ID
+```
+
+Note: lack of appropriate permissions can cause issues with Docker image download. 
+
+d. To double check that the SP has permissions over the ACR, you can log in with the SP and list available 
+```
+az login --service-principal -u <client_id> -p <sp_secret> -t <tenant_id>
+az acr list
+```
+e. If you need to get/reset the SP password, you can run
+```
+SP_SECRET=$(az ad sp credential reset --name $CLIENT_ID -query password -o tsv)
+```
+### Deploy Azure Machine Learning (AML) workspace
+
+3. Install AML CLI extension
+```
+az extension add -n azure-cli-ml
+```
+
+4. Create the AML Workspace
+```
+az group create --name <resource_group_name> --location <location>
+```
