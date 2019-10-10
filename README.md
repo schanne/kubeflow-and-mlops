@@ -222,3 +222,53 @@ az extension add -n azure-cli-ml
 ```
 az group create --name <resource_group_name> --location <location>
 ```
+
+## 4. Local
+
+TODO
+
+## 5. Set up the Continuous Integration (CI) pipeline in Azure Pipelines
+
+
+1. Set up the pipeline variables
+
+For security purposes, it is recommended that 
+
+a. In Azure Pipelines, go to Pipelines -> Library -> Variable Groups -> Add Variable Group. 
+Give the group a name and add the following variables based on the names and IDs from the previous steps of this guide.
+
+
+KF_RESOURCE_GROUP - name of the resource group (step 1.6)
+
+KF_AKS_CLUSTER - name of the kubeflow AKS cluster (step 1.7)
+
+KF_ACR - name of the Azure Container Registry (step 3.1)
+
+KF_SUBSCRIPTION_ID - the ID of your Azure Subscription
+
+KF_TENANT_ID - the ID of your Azure Tenant
+
+KF_SERVICE_PRINCIPAL_ID - the ID of the Service Principal (step 3.2.b)
+
+KF_SERVICE_PRINCIPAL_PASSWORD - the password/secret of the SP 
+
+KF_WORKSPACE - name of the Azure ML Workspace (step 3.3.4)
+
+KF_DATA_DOWNLOAD - the URL to the zip of the data set
+
+Note that the TacosAndBurritos pipeline currently uses the data set available at the following URL https://aiadvocate.blob.core.windows.net/public/tacodata.zip
+
+KF_PIPELINE_ID -  the Kubeflow pipeline ID (step TODO
+KF_EXPERIMENT_ID - the Kubeflow experiment ID (step TODO
+
+b. Variables in the YAML file
+The following variables are safe to check into source control, and they are part of the current YAML pipeline file:
+
+```
+KF_BATCH: 32
+KF_EPOCHS: 5
+KF_LEARNING_RATE: 0.0001
+KF_MODEL_NAME: tacosandburritos
+KF_PERSISTENT_VOLUME_NAME: azure
+KF_PERSISTENT_VOLUME_PATH: /mnt/azure
+```
