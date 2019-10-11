@@ -3,9 +3,6 @@
 
 This repository provides a sample ML CI/CD pipeline using Kubeflow, Azure ML workspaces and Azure Pipelines
 
-# Using this code
-
-TODO
 
 # Deploy Kubeflow
 
@@ -227,7 +224,8 @@ az group create --name <resource_group_name> --location <location>
 
 Note: a similar (but not identical) walkthrough for the Tacos and Buritos model is provided on the [kubeflow website](https://www.kubeflow.org/docs/azure/azureendtoend/). 
 
-1. [Fork](https://help.github.com/en/articles/fork-a-repo#fork-an-example-repository) this repo and clone it to your local machine
+1. [Fork](https://help.github.com/en/articles/fork-a-repo#fork-an-example-repository) this repo and clone it
+ to your local machine
     ```
     git@github.com:DivineOps/kubeflow-and-mlops.git
     ```
@@ -327,6 +325,8 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
 
 ## 5. Set up the Continuous Integration (CI) pipeline in Azure Pipelines
 
+In this part, we will create a CI pipeline in Azure Pipelines. The CI pipeline will build and push the 3 required Docker images - *preprocess*, *training* and *register*, and then trigger the Kubeflow Pipeline. This part depends on part 4.1-7 being completed successfully.
+
 1. [Create an Azure DevOps Account](https://docs.microsoft.com/en-us/azure/devops/user-guide/sign-up-invite-teammates?view=azure-devops)
 
 2. Set up the pipeline variables
@@ -377,3 +377,69 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
     
     a. In Azure DevOps, click on Pipelines -> Pipelines -> New Pipeline
     b. In "Where is your code" choose GitHub (YAML)
+    c. Choose your fork of this repository as source
+    d. In "Configure your pipeline" choose "Existing Azure Pipelines YAML file" 
+    e. Choose the master branch
+    f. Choose the ```azure-pipelines-tnb.yml``` file 
+    g. Click run to run the CI pipeline
+
+Note: you may need to authorize the GitHub repo and the subscription connections. 
+
+4. Validate the Kubeflow run
+
+    The last step of the CI pipeline triggers the Kubeflow Pipeline. Now that our CI pipeline completed successfully, we can check that the Kubeflow Pipeline also completed successfully.
+
+    a. Browse to your Kubeflow Dashboard and open your pipeline and experiment
+    b. Validate that the Kubeflow Pipeline ran and completed successfully
+
+## 6. Create the Release (CD) pipeline in Azure Pipelines
+
+1. Install the [Azure Machine Learning extension](https://marketplace.visualstudio.com/items?itemName=ms-air-aiagility.vss-services-azureml) for Azure Devops. 
+
+2. Import the Release Pipeline
+    a. In Azure DevOps, click Pipelines -> Releases
+    b. Click New -> Import Pipeline 
+    c. Browse to this repo/release-pipelines and import ```Tacos vs. Burritos - Release Model.json```
+
+3. Add the ML model artifact 
+    Note: this step depends on the Kubeflow pipeline completing sucessfully and AML model being registered in AML workspace.
+
+    a. Delete the existing pipeline artifacts 
+    b. Add a new artifact of type AzureML. Select your AML workspace name (same as KF_WORKSPACE)
+    ![AML artifact](/readme-images/aml-artifact.png)
+    c. Name the source alias *amlmodel* (the name is referenced in pipeline steps)
+
+4. Add the model configuration artifact
+
+    Note: this is somewhat hacky, as the latest model technically doesn't have to match the latest config files in GitHub. 
+
+    a. Add a new artifact of type GitHub
+    b. Choose your repository fork
+    c. Choose the master branch, and the latest version
+    d. Name the source alias *github-kubeflow-and-mlops* (the name is referenced in pipeline steps) 
+    
+5. Configure the Azure Resource connections
+    a. Click into each step of the pipeline and configure the Azure Subscription
+    b. The Deploy ACI step will create an ACI environment if it doesn't exist
+    c. The Deploy AKS step will *NOT* create the AKS cluster if it doesn't exist. If you do not wish to deploy an AKS cluster, you can disable this pipeline stage. 
+
+6. (Optional) Deploy an AKS cluster to run the model 
+For more details on this process, please refer to the [Azure ML docs](https://docs.microsoft.com/en-us/azure/machine-learning/service/how-to-deploy-azure-kubernetes-service)
+
+    a. Deploy a *different* AKS cluster with a *minimum of 12 CPUs* (please refer to part 1 of this guide for AKS deployment instructions) 
+    
+    b. Attach the cluster as a compute target for Azure ML
+    ```
+    aksresourceid=$(az aks show -n <new_cluster_name> -g <resource_group_name> --query id)
+    az ml computetarget attach aks -n <name> -i aksresourceid -g <resource_group_name> -w <aml_myworkspace_name>
+    ```
+    Note: I had to copy-paste the resource ID rather than use the variable, probably a quotes issue. 
+
+    Note: the above step takes a few minutes.
+
+    c. Run the following to see if the AKS cluster is ready
+    ```
+    az ml computetarget show -n <new_cluster_name> -g <resource_group_name> -w <aml_myworkspace_name>
+    ```
+
+7. Trigger the pipeline and validate that it ran successfully.
