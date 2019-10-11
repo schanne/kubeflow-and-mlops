@@ -1,0 +1,98 @@
+# Kubeflow Container Build Pipeline
+
+trigger:
+- master
+
+variables:
+
+- group: KF_VARS
+  
+pr: none
+
+stages:
+- stage: ContainerConfig
+  displayName: 'Configure and Register Containers'
+  jobs:
+  - job: Containers
+    pool:
+      name: Hosted Ubuntu 1604
+    steps:
+    - task: AzureCLI@1
+      inputs:
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az acr login -n $(KF_ACR)  
+          cd code 
+          cd preprocess 
+          docker build -t $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION . 
+          docker push $(KF_ACR).azurecr.io/preprocess:$BUILD_SOURCEVERSION 
+        displayName: 'Build & Push Preprocess Image'
+
+    - task: AzureCLI@1
+      inputs:
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          cd code 
+          cd training 
+          docker build -t $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION .
+          docker push $(KF_ACR).azurecr.io/training:$BUILD_SOURCEVERSION 
+        displayName: 'Build & Push Training Image'
+
+    - task: AzureCLI@1
+      inputs:
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          cd code 
+          cd register 
+          docker build -t $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION . 
+          docker push $(KF_ACR).azurecr.io/register:$BUILD_SOURCEVERSION 
+        displayName: 'Build & Push Register Image'
+
+
+# Moved KF step to build
+- stage: KubeflowTrigger
+
+  variables: 
+    KF_BATCH: 32
+    KF_EPOCHS: 5
+    KF_LEARNING_RATE: 0.0001
+    KF_MODEL_NAME: tacosandburritos
+    KF_PERSISTENT_VOLUME_NAME: azure
+    KF_PERSISTENT_VOLUME_PATH: /mnt/azure
+
+  dependsOn: ContainerConfig
+  displayName: 'Trigger Kubeflow Pipeline'
+  jobs:
+  - job: Kubeflow
+    pool:
+      name: Hosted Ubuntu 1604
+    steps:
+    - task: AzureCLI@1
+      env:
+        KF_MAPPED_SERVICE_PRINCIPAL_PASSWORD: $(KF_SERVICE_PRINCIPAL_PASSWORD)
+      inputs:
+        azureSubscription: $(KF_SUBSCRIPTION_ID)
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az aks get-credentials -g $(KF_RESOURCE_GROUP) -n $(KF_AKS_CLUSTER)
+          kubectl port-forward --namespace kubeflow svc/ml-pipeline 8888:8888 &
+          kubepid=$!
+          
+          sudo apt-get install python3-setuptools
+          pip3 install wheel
+          pip3 install kfp
+          
+          touch script.py
+          echo "import kfp" >> script.py
+          echo "client = kfp.Client(host='localhost:8888')" >> script.py
+          echo "client.run_pipeline('$KF_EXPERIMENT_ID', 'Run ${BUILD_BUILDID}', params={'imagetag': '${BUILD_SOURCEVERSION}', 'tenant-id': '$KF_TENANT_ID', 'service-principal-id': '$KF_SERVICE_PRINCIPAL_ID', 'service-principal-password': '$KF_MAPPED_SERVICE_PRINCIPAL_PASSWORD', 'subscription-id': '$KF_SUBSCRIPTION_ID', 'resource-group': '$KF_RESOURCE_GROUP', 'workspace': '$KF_WORKSPACE', 'persistent-volume-name': '$KF_PERSISTENT_VOLUME_NAME', 'persistent-volume-path': '$KF_PERSISTENT_VOLUME_PATH', 'data-download': '$KF_DATA_DOWNLOAD', 'epochs': '$KF_EPOCHS', 'batch': '$KF_BATCH', 'learning-rate': '$KF_LEARNING_RATE', 'model-name': '$KF_MODEL_NAME'}, pipeline_id='$KF_PIPELINE_ID')" >> script.py 
+          
+          cat script.py
+          
+          python3 script.py
+          
+          kill $kubepid
+        displayName: 'Trigger Kubeflow Pipeline'

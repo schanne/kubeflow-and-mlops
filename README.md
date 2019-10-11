@@ -227,7 +227,7 @@ az group create --name <resource_group_name> --location <location>
 
 Note: a similar (but not identical) walkthrough for the Tacos and Buritos model is provided on the [kubeflow website](https://www.kubeflow.org/docs/azure/azureendtoend/). 
 
-1. Clone this repository to your local machine
+1. [Fork](https://help.github.com/en/articles/fork-a-repo#fork-an-example-repository) this repo and clone it to your local machine
     ```
     git@github.com:DivineOps/kubeflow-and-mlops.git
     ```
@@ -327,8 +327,9 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
 
 ## 5. Set up the Continuous Integration (CI) pipeline in Azure Pipelines
 
+1. [Create an Azure DevOps Account](https://docs.microsoft.com/en-us/azure/devops/user-guide/sign-up-invite-teammates?view=azure-devops)
 
-1. Set up the pipeline variables
+2. Set up the pipeline variables
 
     For security purposes, it is recommended that you save sensitive information like resource names, IDs and passwords in a secret store. You can use Azure DevOps variable groups, Azure KeyVault or another store of your choosing. 
 
@@ -361,7 +362,7 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
     KF_EXPERIMENT_ID - the Kubeflow experiment ID (step 4.7.f)
 
     b. Variables in the YAML file
-    The following variables are safe to check into source control, and they are part of the current YAML pipeline file:
+    The following variables are safe to check into source control, and they are already a part of the current YAML pipeline file:
 
     ```
     KF_BATCH: 32
@@ -372,3 +373,7 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
     KF_PERSISTENT_VOLUME_PATH: /mnt/azure
     ```
 
+3. Create the CI pipeline
+    
+    a. In Azure DevOps, click on Pipelines -> Pipelines -> New Pipeline
+    b. In "Where is your code" choose GitHub (YAML)
