@@ -97,7 +97,7 @@ kubectl get all --all-namespaces
 ## 2. Install Kubeflow
 
 For more examples, and guides for other platforms, please refer to the [kubeflow.org getting started page](https://www.kubeflow.org/docs/started/getting-started/)
-1. Download the latest kfctl executable from the [kubeflow releases page](https://github.com/kubeflow/kubeflow/releases/) to your local machine
+1. Download the latest kfctl executable from the [Kubeflow releases page](https://github.com/kubeflow/kubeflow/releases/) to your local machine
 
 #### On a Mac
 Use the latest Mac executable, e.g. 
@@ -118,7 +118,7 @@ tar -xvf kfctl_<release tag>_<platform>.tar.gz
 export PATH=$PATH:<path to where kfctl was unpacked>
 ```
 
-4. Choose and set the directory name for kubeflow setup files
+4. Choose and set the directory name for Kubeflow setup files
 ```
 export KFAPP=<your choice of application directory name> (ensure the name is lowercase)
 ```
@@ -132,7 +132,7 @@ e.g.
 export CONFIG=https://raw.githubusercontent.com/kubeflow/kubeflow/v0.6.2/bootstrap/config/kfctl_k8s_istio.0.6.2.yaml
 ````
 
-6. Generate the configuration files and deploy kubeflow
+6. Generate the configuration files and deploy Kubeflow
 
 Note: make sure that you are connected to the cluster. Refer to step 1.9. for details. 
 
@@ -147,7 +147,7 @@ kfctl apply all -V
 kubectl get all -n kubeflow
 ```
 
-8. Connect to the kubeflow dashboard
+8. Connect to the Kubeflow Dashboard
 
 #### Open the dashboard locally
 ```
@@ -156,7 +156,7 @@ kubectl port-forward svc/istio-ingressgateway -n istio-system 8080:80
 And browse to http://localhost:8080 on your local machine
 
 #### Enable external IP in AKS
-To expose the kubeflow dashboard over an external IP in AKS, modify the type of the istio ingress gateway. To do so, run:
+To expose the Kubeflow Dashboard over an external IP in AKS, modify the type of the istio ingress gateway. To do so, run:
 ```
 kubectl edit -n istio-system svc/istio-ingressgateway
 ```
@@ -166,7 +166,7 @@ Use the command
 ```
 kubectl get -w -n istio-system svc/istio-ingressgateway
 ```
-To get the new IP of the kubeflow dashboard.
+To get the new IP of the Kubeflow Dashboard.
 
 Your dashboard should look similar to the following
 ![Kubeflow Dashboard](/readme-images/kubeflow-dashboard.png)
@@ -223,52 +223,150 @@ az extension add -n azure-cli-ml
 az group create --name <resource_group_name> --location <location>
 ```
 
-## 4. Local
+## 4. Setup the Kubeflow Pipeline
 
-TODO
+Note: a similar (but not identical) walkthrough for the Tacos and Buritos model is provided on the [kubeflow website](https://www.kubeflow.org/docs/azure/azureendtoend/). 
+
+1. Clone this repository to your local machine
+    ```
+    git@github.com:DivineOps/kubeflow-and-mlops.git
+    ```
+
+2. Create a persistent volume claim (PVC) in Kubeflow on AKS
+
+    A persistent volume claim is a dynamically provisioned storage resource attached to a Kubernetes cluster. It is used in the pipeline to store data and files across pipeline steps.
+    ```
+    cd kubernetes
+    kubectl apply -f pvc.yaml
+    ```
+
+3. Update the pipeline  
+
+    a. Open code/pipeline.py
+
+    b. Update the Azure Container Registry name for the Docker images (for *preprocess*, *training* and *register* containers) to your ACR name
+
+    c. If needed, update the Dockerfiles in the corresponding folders to point to the tensorflow images you wish to use. Note that there are separate GPU and non-GPU images. See the list of the latest tags here https://hub.docker.com/r/tensorflow/tensorflow/tags 
+
+    d. If needed, update the tensorflow version in code/deploy/environment.yml to latest. 
+
+4. Setup the Python environment
+
+    a. Install [Python 3](https://www.python.org/downloads/)
+
+    b. Install required modules
+    ```
+    pip3 install kubernetes
+	pip3 install kfp
+    ```
+
+5. Compile the pipeline
+    The following command will create a pipeline.py.tar.gz
+
+    ```
+    cd code
+    python3 pipeline.py
+    ```
+
+6. Upload the pipeline
+
+    a. On your Kubeflow Dashboard, click Pipelines -> Upload Pipeline -> Choose file, and upload the pipeline.py.tar.gz you've just created.
+    b. Click on Pipelines
+    c. Right click on the new Pipeline and select "Copy link address"
+    d. Note the Pipeline GUID from the link
+
+    Note: this is the only way I found to get the Pipeline/Experiment GUIDs. Please let me know if you have a better way. 
+
+7. Create an experiment
+    a. On your Kubeflow Dashboard, click on the new Pipeline -> Create experiment. 
+    b. Give your experiment a name and click Next.
+    c. On the next page, click "Skip this step". 
+    d. Click on Experiments
+    e. Right click on the new Experiment and select "Copy link address"
+    f. Note the Experiment GUID fro the link
+
+    Note: we will need the experiment to run the CI pipeline, but we won't be able to create a successful run until we push the Docker images to the registry. 
+
+8. (Optional) Create the docker images locally
+
+    The following steps describe how to create the Docker images locally. The Docker images will also be created by the CI pipeline in Azure Pipelines, so you may skip this step and proceed to part 5. 
+
+    a. [Install Docker](https://docs.docker.com/install/)
+
+    b. Setup variables and login to ACR
+    ```
+    export REGISTRY_PATH=<registry_name>.azurecr.io
+    export VERSION_TAG=latest
+    az acr login --name <registry_name>
+    ```
+    c. Go to the code directory of this repo 
+
+    d. Build and push the *preprocess* Docker image
+    ```
+    cd preprocess
+    docker build . -t ${REGISTRY_PATH}/preprocess:${VERSION_TAG}
+    docker push ${REGISTRY_PATH}/preprocess:${VERSION_TAG}
+    ```
+    e. Build and push the *training* Docker image
+    ```
+    cd ../training
+    docker build . -t ${REGISTRY_PATH}/training:${VERSION_TAG}
+    docker push ${REGISTRY_PATH}/training:${VERSION_TAG}
+    ```
+    f. Build and push the *register* Docker image
+    ```
+    cd ../register
+    docker build . -t ${REGISTRY_PATH}/register:${VERSION_TAG}
+    docker push ${REGISTRY_PATH}/register:${VERSION_TAG}
+    ```
+
+9. (Optional) Create a run
+    If you've  completed step 4.8, you can manually trigger a Kubeflow Pipeline run by clicking on Pipelines -> Experiments -> <Your Experiment> -> Create run and filling in the required parameters. 
+
+    To wire up the run automation, proceed to part 5. 
 
 ## 5. Set up the Continuous Integration (CI) pipeline in Azure Pipelines
 
 
 1. Set up the pipeline variables
 
-For security purposes, it is recommended that 
+    For security purposes, it is recommended that you save sensitive information like resource names, IDs and passwords in a secret store. You can use Azure DevOps variable groups, Azure KeyVault or another store of your choosing. 
 
-a. In Azure Pipelines, go to Pipelines -> Library -> Variable Groups -> Add Variable Group. 
-Give the group a name and add the following variables based on the names and IDs from the previous steps of this guide.
+    a. In Azure Pipelines, go to Pipelines -> Library -> Variable Groups -> Add Variable Group. 
+    Give the group a name and add the following variables based on the names and IDs from the previous steps of this guide.
 
 
-KF_RESOURCE_GROUP - name of the resource group (step 1.6)
+    KF_RESOURCE_GROUP - name of the resource group (step 1.6)
 
-KF_AKS_CLUSTER - name of the kubeflow AKS cluster (step 1.7)
+    KF_AKS_CLUSTER - name of the kubeflow AKS cluster (step 1.7)
 
-KF_ACR - name of the Azure Container Registry (step 3.1)
+    KF_ACR - name of the Azure Container Registry (step 3.1)
 
-KF_SUBSCRIPTION_ID - the ID of your Azure Subscription
+    KF_SUBSCRIPTION_ID - the ID of your Azure Subscription
 
-KF_TENANT_ID - the ID of your Azure Tenant
+    KF_TENANT_ID - the ID of your Azure Tenant
 
-KF_SERVICE_PRINCIPAL_ID - the ID of the Service Principal (step 3.2.b)
+    KF_SERVICE_PRINCIPAL_ID - the ID of the Service Principal (step 3.2.b)
 
-KF_SERVICE_PRINCIPAL_PASSWORD - the password/secret of the SP 
+    KF_SERVICE_PRINCIPAL_PASSWORD - the password/secret of the SP 
 
-KF_WORKSPACE - name of the Azure ML Workspace (step 3.3.4)
+    KF_WORKSPACE - name of the Azure ML Workspace (step 3.3.4)
 
-KF_DATA_DOWNLOAD - the URL to the zip of the data set
+    KF_DATA_DOWNLOAD - the URL to the zip of the data set
 
-Note that the TacosAndBurritos pipeline currently uses the data set available at the following URL https://aiadvocate.blob.core.windows.net/public/tacodata.zip
+    Note that the TacosAndBurritos pipeline currently uses the data set available at the following URL https://aiadvocate.blob.core.windows.net/public/tacodata.zip
 
-KF_PIPELINE_ID -  the Kubeflow pipeline ID (step TODO
-KF_EXPERIMENT_ID - the Kubeflow experiment ID (step TODO
+    KF_PIPELINE_ID -  the Kubeflow pipeline ID (step TODO
+    KF_EXPERIMENT_ID - the Kubeflow experiment ID (step TODO
 
-b. Variables in the YAML file
-The following variables are safe to check into source control, and they are part of the current YAML pipeline file:
+    b. Variables in the YAML file
+    The following variables are safe to check into source control, and they are part of the current YAML pipeline file:
 
-```
-KF_BATCH: 32
-KF_EPOCHS: 5
-KF_LEARNING_RATE: 0.0001
-KF_MODEL_NAME: tacosandburritos
-KF_PERSISTENT_VOLUME_NAME: azure
-KF_PERSISTENT_VOLUME_PATH: /mnt/azure
-```
+    ```
+    KF_BATCH: 32
+    KF_EPOCHS: 5
+    KF_LEARNING_RATE: 0.0001
+    KF_MODEL_NAME: tacosandburritos
+    KF_PERSISTENT_VOLUME_NAME: azure
+    KF_PERSISTENT_VOLUME_PATH: /mnt/azure
+    ```
