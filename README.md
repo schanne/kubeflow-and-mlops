@@ -356,8 +356,9 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
 
     Note that the TacosAndBurritos pipeline currently uses the data set available at the following URL https://aiadvocate.blob.core.windows.net/public/tacodata.zip
 
-    KF_PIPELINE_ID -  the Kubeflow pipeline ID (step TODO
-    KF_EXPERIMENT_ID - the Kubeflow experiment ID (step TODO
+    KF_PIPELINE_ID -  the Kubeflow pipeline ID (4.6.d)
+
+    KF_EXPERIMENT_ID - the Kubeflow experiment ID (step 4.7.f)
 
     b. Variables in the YAML file
     The following variables are safe to check into source control, and they are part of the current YAML pipeline file:
@@ -370,3 +371,4 @@ Note: a similar (but not identical) walkthrough for the Tacos and Buritos model 
     KF_PERSISTENT_VOLUME_NAME: azure
     KF_PERSISTENT_VOLUME_PATH: /mnt/azure
     ```
+
