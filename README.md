@@ -3,6 +3,8 @@
 
 This repository provides a sample ML CI/CD pipeline using Kubeflow, Azure ML workspaces and Azure Pipelines
 
+# Slides
+Link to the slides to the All Things Open version of this talk [Slides](https://www.slideshare.net/AlexandraRosenbaum/mlops-by-sasha-rosenbaum)
 
 # Deploy Kubeflow
 
