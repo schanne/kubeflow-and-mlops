@@ -1,7 +1,11 @@
 [![Build Status](https://dev.azure.com/sasrose/kubeflow/_apis/build/status/DivineOps.TacosAndBurritos.CI?branchName=master)](https://dev.azure.com/sasrose/kubeflow/_build/latest?definitionId=86&branchName=master)
 # MLOps with Kubeflow, Azure Machine Learning and Azure Pipelines
 
-This repository provides a sample ML CI/CD pipeline using Kubeflow, Azure ML workspaces and Azure Pipelines
+This repository provides a sample ML CI/CD pipeline using Kubeflow, Azure ML workspaces and Azure Pipelines.
+
+It requires:
+- An Azure Account (A trial account works!)
+- An Azure DevOps Organization (The free tier is works!)
 
 # Slides
 Link to the slides to the All Things Open version of this talk [Slides](https://www.slideshare.net/AlexandraRosenbaum/mlops-by-sasha-rosenbaum)
