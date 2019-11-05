@@ -5,7 +5,7 @@ This repository provides a sample ML CI/CD pipeline using Kubeflow, Azure ML wor
 
 It requires:
 - An Azure Account (A trial account works!)
-- An Azure DevOps Organization (The free tier is works!)
+- An Azure DevOps Organization (The free tier works!)
 
 # Slides
 Link to the slides to the All Things Open version of this talk [Slides](https://www.slideshare.net/AlexandraRosenbaum/mlops-by-sasha-rosenbaum)
